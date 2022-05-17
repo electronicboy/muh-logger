@@ -1,0 +1,5 @@
+name: Muhlogger
+version: '${project.version}'
+main: pw.valaria.muhlogger.Muhlogger
+api-version: 1.18
+load: STARTUP
