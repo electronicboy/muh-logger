@@ -20,14 +20,17 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.logging.Formatter;
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 
 public final class Muhlogger extends JavaPlugin {
 
     List<String> loggers;
     List<Logger> injected = new ArrayList<>();
+    Formatter formatter = new SimpleFormatter();
 
     @Override
     public void onLoad() {
@@ -87,7 +90,7 @@ public final class Muhlogger extends JavaPlugin {
         logger.addHandler(new Handler() {
                               @Override
                               public void publish(LogRecord record) {
-                                  final TextComponent deserialize = LegacyComponentSerializer.legacySection().deserialize(record.getMessage());
+                                  final TextComponent deserialize = LegacyComponentSerializer.legacySection().deserialize(formatter.format(record));
                                   Component prefix;
                                   if (record.getLoggerName().equals("Minecraft")) {
                                       prefix = Component.text().asComponent();
