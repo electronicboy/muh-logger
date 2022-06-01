@@ -90,7 +90,7 @@ public final class Muhlogger extends JavaPlugin {
         logger.addHandler(new Handler() {
                               @Override
                               public void publish(LogRecord record) {
-                                  final TextComponent deserialize = LegacyComponentSerializer.legacySection().deserialize(formatter.format(record));
+                                  final TextComponent deserialize = LegacyComponentSerializer.legacySection().deserialize(formatter.formatMessage(record));
                                   Component prefix;
                                   if (record.getLoggerName().equals("Minecraft")) {
                                       prefix = Component.text().asComponent();
