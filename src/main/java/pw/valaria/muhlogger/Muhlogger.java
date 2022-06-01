@@ -98,6 +98,9 @@ public final class Muhlogger extends JavaPlugin {
                                       prefix = Component.text("[" + record.getLoggerName() + "] ");
                                   }
                                   Bukkit.getConsoleSender().sendMessage(prefix.append(deserialize));
+                                  if (record.getThrown() != null) {
+                                      record.getThrown().printStackTrace();
+                                  }
                               }
 
                               @Override
