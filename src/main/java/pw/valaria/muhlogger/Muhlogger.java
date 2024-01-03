@@ -5,16 +5,19 @@ import com.destroystokyo.paper.utils.PaperPluginLogger;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.plugin.java.PluginClassLoader;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import pw.valaria.muhlogger.util.LoggerUtil;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -22,6 +25,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.logging.Formatter;
 import java.util.logging.Handler;
+import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
@@ -87,33 +91,84 @@ public final class Muhlogger extends JavaPlugin {
                 }
             }
         }
-        logger.addHandler(new Handler() {
-                              @Override
-                              public void publish(LogRecord record) {
-                                  final TextComponent deserialize = LegacyComponentSerializer.legacySection().deserialize(formatter.formatMessage(record));
-                                  Component prefix;
-                                  if (record.getLoggerName().equals("Minecraft")) {
-                                      prefix = Component.text().asComponent();
-                                  } else {
-                                      prefix = Component.text("[" + record.getLoggerName() + "] ");
+
+        boolean hasComponentLogger;
+        try {
+            Plugin.class.getDeclaredMethod("getComponentLogger");
+            hasComponentLogger = true;
+        } catch (NoSuchMethodException e) {
+            hasComponentLogger = false;
+        }
+
+        if (hasComponentLogger) {
+            logger.addHandler(new Handler() {
+                @Override
+                public void publish(LogRecord record) {
+                    ComponentLogger componentLogger = ComponentLogger.logger(record.getLoggerName());
+                    Component output = LegacyComponentSerializer.legacySection().deserialize(formatter.formatMessage(record));
+
+                    org.slf4j.event.Level level = LoggerUtil.getLevel(record.getLevel());
+                    switch (level) {
+                        case ERROR:
+                            componentLogger.error(output, record.getThrown());
+                            break;
+                        case WARN:
+                            componentLogger.warn(output, record.getThrown());
+                            break;
+                        case INFO:
+                            componentLogger.info(output, record.getThrown());
+                            break;
+                        case DEBUG:
+                            componentLogger.debug(output, record.getThrown());
+                            break;
+                        case TRACE:
+                            componentLogger.trace(output, record.getThrown());
+                            break;
+                        default:
+                            componentLogger.info(output, record.getThrown());
+                            break;
+                    }
+
+                }
+
+                @Override
+                public void flush() {
+                }
+
+                @Override
+                public void close() throws SecurityException {
+                }
+            });
+
+        } else {
+            logger.addHandler(new Handler() {
+                                  @Override
+                                  public void publish(LogRecord record) {
+                                      final TextComponent deserialize = LegacyComponentSerializer.legacySection().deserialize(formatter.formatMessage(record));
+                                      Component prefix;
+                                      if (record.getLoggerName().equals("Minecraft")) {
+                                          prefix = Component.text().asComponent();
+                                      } else {
+                                          prefix = Component.text("[" + record.getLoggerName() + "] ");
+                                      }
+                                      Bukkit.getConsoleSender().sendMessage(prefix.append(deserialize));
+                                      if (record.getThrown() != null) {
+                                          record.getThrown().printStackTrace();
+                                      }
                                   }
-                                  Bukkit.getConsoleSender().sendMessage(prefix.append(deserialize));
-                                  if (record.getThrown() != null) {
-                                      record.getThrown().printStackTrace();
+
+                                  @Override
+                                  public void flush() {
+
+                                  }
+
+                                  @Override
+                                  public void close() throws SecurityException {
+
                                   }
                               }
-
-                              @Override
-                              public void flush() {
-
-                              }
-
-                              @Override
-                              public void close() throws SecurityException {
-
-                              }
-                          }
-        );
+            );
+        }
         logger.setUseParentHandlers(false);
         injected.add(logger);
     }
